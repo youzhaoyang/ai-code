@@ -1,0 +1,8 @@
+{
+  "name": "ai-image-community",
+  "version": "1.0.0",
+  "description": "Simple static front-end for AI generated image community",
+  "scripts": {
+    "test": "echo \"No tests provided\""
+  }
+}
