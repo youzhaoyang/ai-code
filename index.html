@@ -1,14 +1,719 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/ai-code/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>edit-work-demo</title>
-    <script type="module" crossorigin src="/ai-code/assets/index-BvwMNbRY.js"></script>
-    <link rel="stylesheet" crossorigin href="/ai-code/assets/index-3hZeFQTZ.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LibTV 团队版 — 项目空间与协作 预览原型</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif; background: #000; color: #f7f7f7; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); } 70% { box-shadow: 0 0 0 8px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); } }
+  @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes generating { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  .slide-up { animation: slideUp 0.4s ease-out; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useCallback, useEffect, useRef, memo, createContext, useContext } = React;
+
+// ============================================================
+// 数据 & 常量
+// ============================================================
+const TEAM_NAME = "XX工作室";
+
+const COLLABORATOR_COLORS = [
+  { border: "#3B82F6", bg: "rgba(59,130,246,0.15)", name: "蓝" },
+  { border: "#F59E0B", bg: "rgba(245,158,11,0.15)", name: "橙" },
+  { border: "#10B981", bg: "rgba(16,185,129,0.15)", name: "绿" },
+  { border: "#EC4899", bg: "rgba(236,72,153,0.15)", name: "粉" },
+  { border: "#8B5CF6", bg: "rgba(139,92,246,0.15)", name: "紫" },
+];
+
+const MOCK_COVERS = [
+  "https://picsum.photos/seed/tv1/400/225",
+  "https://picsum.photos/seed/tv2/400/225",
+  "https://picsum.photos/seed/tv3/400/225",
+  "https://picsum.photos/seed/tv4/400/225",
+  "https://picsum.photos/seed/tv5/400/225",
+  "https://picsum.photos/seed/tv6/400/225",
+  "https://picsum.photos/seed/tv7/400/225",
+  "https://picsum.photos/seed/tv8/400/225",
+  "https://picsum.photos/seed/tv9/400/225",
+  "https://picsum.photos/seed/tv10/400/225",
+];
+
+const generateProjects = (prefix, count) =>
+  Array.from({ length: count }, (_, i) => ({
+    id: `${prefix}-${i + 1}`,
+    name: i === 0 && prefix === "p" ? "untitled" : `${prefix === "p" ? "个人" : "团队"}项目 ${i + 1}`,
+    cover: MOCK_COVERS[i % MOCK_COVERS.length],
+    date: "2026/02/03",
+    owner: prefix === "t" ? ["张三", "李四", "王五"][i % 3] : null,
+  }));
+
+const INITIAL_PERSONAL = generateProjects("p", 8);
+const INITIAL_TEAM = generateProjects("t", 5);
+
+const ONLINE_USERS = [
+  { id: "u1", name: "我", avatar: "👤", color: COLLABORATOR_COLORS[0] },
+  { id: "u2", name: "张三", avatar: "🧑", color: COLLABORATOR_COLORS[1] },
+  { id: "u3", name: "李四", avatar: "👩", color: COLLABORATOR_COLORS[2] },
+];
+
+// ============================================================
+// 全局 Context
+// ============================================================
+const AppContext = createContext(null);
+
+// ============================================================
+// 通用组件
+// ============================================================
+const Toast = memo(function Toast({ message, type = "info", onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 2500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  const colors = {
+    success: { bg: "rgba(16,185,129,0.15)", border: "#10B981", icon: "✓" },
+    error: { bg: "rgba(239,68,68,0.15)", border: "#EF4444", icon: "✕" },
+    warning: { bg: "rgba(245,158,11,0.15)", border: "#F59E0B", icon: "⚠" },
+    info: { bg: "rgba(59,130,246,0.15)", border: "#3B82F6", icon: "ℹ" },
+  };
+  const c = colors[type];
+  return (
+    <div className="slide-up" style={{
+      position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 9999,
+      background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12,
+      padding: "10px 20px", display: "flex", alignItems: "center", gap: 8,
+      backdropFilter: "blur(16px)", fontSize: 13, color: "#fff",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+    }}>
+      <span>{c.icon}</span>
+      <span>{message}</span>
+    </div>
+  );
+});
+
+const Modal = memo(function Modal({ opened, onClose, children }) {
+  if (!opened) return null;
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+      background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+    }} onClick={onClose}>
+      <div className="slide-up" style={{
+        width: 380, borderRadius: 16, border: "1px solid rgba(255,255,255,0.1)",
+        background: "rgba(38,38,38,0.95)", padding: 24,
+        boxShadow: "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 0.5px rgba(255,255,255,0.04)",
+        backdropFilter: "blur(16px)",
+      }} onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+});
+
+const MenuDropdown = memo(function MenuDropdown({ items, position, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div ref={ref} className="fade-in" style={{
+      position: "absolute", ...(position || { top: "100%", right: 0 }), zIndex: 100,
+      background: "rgba(31,31,31,0.90)", backdropFilter: "blur(16px)",
+      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 6, minWidth: 140,
+      boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)",
+    }}>
+      {items.map((item, i) => (
+        <div key={i} onClick={() => { item.onClick(); onClose(); }}
+          style={{
+            padding: "8px 10px", borderRadius: 8, fontSize: 13,
+            color: item.danger ? "#EF4444" : "#fff", cursor: "pointer",
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+        >
+          {item.label}
+        </div>
+      ))}
+    </div>
+  );
+});
+
+// ============================================================
+// 项目卡片
+// ============================================================
+const ProjectCard = memo(function ProjectCard({ project, menuItems, onClick }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  return (
+    <div style={{ width: "100%", cursor: "pointer", borderRadius: 12, overflow: "hidden", transition: "transform 0.2s" }}
+      onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+      onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+    >
+      <div style={{ position: "relative", aspectRatio: "16/9", width: "100%", overflow: "hidden", borderRadius: 12, border: "0.5px solid #363636" }}>
+        {!imgLoaded && <div style={{ position: "absolute", inset: 0, background: "#171717", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>}
+        <img src={project.cover} alt={project.name} onLoad={() => setImgLoaded(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: imgLoaded ? "block" : "none" }}
+          onClick={onClick}
+        />
+        {menuItems && (
+          <div style={{ position: "absolute", top: 8, right: 8 }}>
+            <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+                background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.7)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                opacity: 0.7, transition: "opacity 0.15s",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = "0.7"}
+            >···</button>
+            {menuOpen && <MenuDropdown items={menuItems} onClose={() => setMenuOpen(false)} />}
+          </div>
+        )}
+      </div>
+      <div style={{ padding: "8px 8px 4px" }}>
+        <p style={{ fontSize: 14, fontWeight: 500, color: "#A8A8A8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {project.name || "untitled"}
+        </p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{project.date}</p>
+      </div>
+    </div>
+  );
+});
+
+const CreateCard = memo(function CreateCard() {
+  return (
+    <div style={{ width: "100%", cursor: "pointer", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{
+        aspectRatio: "16/9", width: "100%", borderRadius: 12,
+        border: "0.5px solid rgba(255,255,255,0.24)",
+        background: "linear-gradient(124deg, rgba(172,188,202,0.20) 30.75%, rgba(14,43,83,0.20) 99.42%), linear-gradient(180deg, #000 0%, #171717 100%)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+        transition: "border-color 0.2s, background 0.2s",
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.36)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.24)"; }}
+      >
+        <span style={{ fontSize: 20, color: "#F7F7F7" }}>+</span>
+        <span style={{ fontSize: 14, fontWeight: 500, color: "#F7F7F7" }}>开始创作</span>
+      </div>
+      <div style={{ padding: "10px 8px" }}>
+        <p style={{ fontSize: 14, fontWeight: 500, color: "#A8A8A8" }}>创建新的视频项目</p>
+      </div>
+    </div>
+  );
+});
+
+// ============================================================
+// 页面一：项目列表（US-01 + US-02）
+// ============================================================
+function ProjectListPage() {
+  const { setPage, showToast } = useContext(AppContext);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [personalProjects, setPersonalProjects] = useState(INITIAL_PERSONAL);
+  const [teamProjects, setTeamProjects] = useState(INITIAL_TEAM);
+  const [migrateTarget, setMigrateTarget] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleMigrate = useCallback((project) => {
+    setMigrateTarget(project);
+    setModalOpen(true);
+  }, []);
+
+  const confirmMigrate = useCallback(() => {
+    if (!migrateTarget) return;
+    setPersonalProjects((prev) => prev.filter((p) => p.id !== migrateTarget.id));
+    setTeamProjects((prev) => [{ ...migrateTarget, id: `t-migrated-${migrateTarget.id}` }, ...prev]);
+    setModalOpen(false);
+    setMigrateTarget(null);
+    showToast("项目已移动至团队空间", "success");
+  }, [migrateTarget, showToast]);
+
+  const getPersonalMenuItems = useCallback((project) => [
+    { label: "打开", onClick: () => setPage("canvas") },
+    { label: "重命名", onClick: () => showToast("重命名功能（演示）", "info") },
+    { label: "移动至团队", onClick: () => handleMigrate(project) },
+    { label: "删除项目", danger: true, onClick: () => {
+      setPersonalProjects((prev) => prev.filter((p) => p.id !== project.id));
+      showToast("项目已删除", "info");
+    }},
+  ], [handleMigrate, showToast, setPage]);
+
+  const getTeamMenuItems = useCallback((project) => [
+    { label: "打开", onClick: () => setPage("canvas") },
+    { label: "重命名", onClick: () => showToast("重命名功能（演示）", "info") },
+    { label: "删除项目", danger: true, onClick: () => {
+      setTeamProjects((prev) => prev.filter((p) => p.id !== project.id));
+      showToast("项目已删除", "info");
+    }},
+  ], [showToast, setPage]);
+
+  const projects = activeTab === "personal" ? personalProjects : teamProjects;
+  const menuItemsFn = activeTab === "personal" ? getPersonalMenuItems : getTeamMenuItems;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#000" }}>
+      {/* Header */}
+      <header style={{
+        height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 24px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>🎬 LibTV</span>
+          <button style={{
+            height: 30, padding: "0 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)",
+            background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer",
+          }}>回到Lib主站</button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span style={{ cursor: "pointer", fontSize: 16, opacity: 0.6 }}>🔍</span>
+          <span style={{ cursor: "pointer", fontSize: 16, opacity: 0.6 }}>🔔</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>会员中心</span>
+          <span style={{ fontSize: 12, color: "#F59E0B" }}>⚡ 300</span>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #3B82F6, #8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>U</div>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div style={{ padding: "20px 24px 0", maxWidth: 1440, margin: "0 auto" }}>
+        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 24 }}>
+          {[
+            { key: "personal", label: "个人" },
+            { key: "team", label: "团队项目" },
+          ].map((tab) => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              padding: "10px 20px", fontSize: 14, fontWeight: 500, border: "none", cursor: "pointer",
+              background: "transparent", position: "relative",
+              color: activeTab === tab.key ? "#fff" : "rgba(255,255,255,0.4)",
+              transition: "color 0.2s",
+            }}>
+              {tab.label}
+              {activeTab === tab.key && (
+                <div style={{
+                  position: "absolute", bottom: -1, left: 20, right: 20, height: 2,
+                  background: "#fff", borderRadius: 1,
+                }} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16,
+        }}>
+          <CreateCard />
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project}
+              menuItems={menuItemsFn(project)}
+              onClick={() => setPage("canvas")}
+            />
+          ))}
+        </div>
+
+        {projects.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 0", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+            {activeTab === "personal" ? "暂无个人项目" : "暂无团队项目"}
+          </div>
+        )}
+      </div>
+
+      {/* 迁移确认弹窗 */}
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 12 }}>
+            移动至「{TEAM_NAME}」
+          </p>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+            将项目转移至团队进行协作，你可以在"团队项目"中访问
+          </p>
+        </div>
+        <div style={{
+          padding: 12, borderRadius: 10, background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.2)", marginBottom: 20,
+        }}>
+          <p style={{ fontSize: 12, color: "#F59E0B", lineHeight: 1.5 }}>
+            ⚠ 此操作不可逆。移动后项目将从个人空间消失，所有团队成员默认获得编辑权限。
+          </p>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <button onClick={() => setModalOpen(false)} style={{
+            height: 36, padding: "0 16px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 13,
+            transition: "background 0.15s",
+          }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+          >取消</button>
+          <button onClick={confirmMigrate} style={{
+            height: 36, padding: "0 16px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "#3B82F6", color: "#fff", fontSize: 13, fontWeight: 500,
+            transition: "background 0.15s",
+          }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "#2563EB"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "#3B82F6"}
+          >移动到团队</button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ============================================================
+// 页面二：画布协作（US-04）
+// ============================================================
+const NODES_INITIAL = [
+  { id: "n1", label: "文生图", x: 80, y: 120, type: "input", params: { prompt: "春暖花开的场景", model: "wan2.1" } },
+  { id: "n2", label: "图生视频", x: 380, y: 120, type: "process", params: { duration: "4s", fps: "24" } },
+  { id: "n3", label: "视频输出", x: 680, y: 120, type: "output", params: { format: "mp4", quality: "高清" } },
+  { id: "n4", label: "音频生成", x: 380, y: 300, type: "process", params: { style: "轻音乐", duration: "4s" } },
+];
+
+const EDGES = [
+  { from: "n1", to: "n2" },
+  { from: "n2", to: "n3" },
+  { from: "n4", to: "n3" },
+];
+
+function CanvasPage() {
+  const { setPage, showToast } = useContext(AppContext);
+  const [nodes, setNodes] = useState(NODES_INITIAL);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [editingUser, setEditingUser] = useState({ n2: ONLINE_USERS[1] });
+  const [generatingNode, setGeneratingNode] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState(ONLINE_USERS);
+  const [showUserJoin, setShowUserJoin] = useState(false);
+
+  // 模拟他人实时操作
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      setEditingUser((prev) => ({ ...prev, n4: ONLINE_USERS[2] }));
+    }, 2000);
+    const t2 = setTimeout(() => {
+      setEditingUser((prev) => {
+        const next = { ...prev };
+        delete next.n2;
+        return next;
+      });
+    }, 5000);
+    const t3 = setTimeout(() => {
+      const newUser = { id: "u4", name: "王五", avatar: "🧑‍💻", color: COLLABORATOR_COLORS[3] };
+      setOnlineUsers((prev) => [...prev, newUser]);
+      setShowUserJoin(true);
+      setTimeout(() => setShowUserJoin(false), 2000);
+    }, 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  const handleGenerate = useCallback((nodeId) => {
+    if (generatingNode) {
+      showToast("该节点正在生成中，请稍后再试或查看最新结果", "warning");
+      return;
+    }
+    setGeneratingNode(nodeId);
+    showToast(`节点「${nodes.find(n=>n.id===nodeId)?.label}」开始生成...`, "info");
+    setTimeout(() => {
+      setGeneratingNode(null);
+      showToast("生成完成！结果已同步给所有在线成员", "success");
+    }, 4000);
+  }, [generatingNode, nodes, showToast]);
+
+  const getNodeCenter = (node) => ({ x: node.x + 70, y: node.y + 30 });
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+      {/* Header */}
+      <header style={{
+        height: 52, display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(10,10,10,0.95)",
+        backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 50,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => setPage("list")} style={{
+            display: "flex", alignItems: "center", gap: 4, background: "transparent", border: "none",
+            color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer", padding: "6px 10px",
+            borderRadius: 8, transition: "all 0.15s",
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+          >← 返回</button>
+          <div style={{ width: 1, height: 20, background: "#525252" }} />
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#fff" }}>团队项目 1</span>
+        </div>
+
+        {/* 在线成员 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginRight: 4 }}>在线：</span>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            {onlineUsers.slice(0, 5).map((user, i) => (
+              <div key={user.id} title={user.name} style={{
+                width: 30, height: 30, borderRadius: "50%",
+                background: user.color.border, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, marginLeft: i > 0 ? -6 : 0, border: "2px solid #0a0a0a",
+                cursor: "pointer", transition: "transform 0.15s", zIndex: onlineUsers.length - i,
+              }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.15)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              >{user.avatar}</div>
+            ))}
+            {onlineUsers.length > 5 && (
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%", background: "#525252",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, color: "#fff", marginLeft: -6, border: "2px solid #0a0a0a",
+              }}>+{onlineUsers.length - 5}</div>
+            )}
+          </div>
+          {showUserJoin && <span className="fade-in" style={{ fontSize: 12, color: "#10B981" }}>王五 加入</span>}
+        </div>
+      </header>
+
+      {/* Canvas Area */}
+      <div style={{ position: "relative", height: "calc(100vh - 52px)", overflow: "hidden", background: "radial-gradient(circle at 50% 50%, #111 0%, #0a0a0a 100%)" }}>
+        {/* 网格背景 */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          <defs>
+            <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="12" cy="12" r="0.8" fill="rgba(255,255,255,0.06)" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+
+          {/* 连线 */}
+          {EDGES.map((edge) => {
+            const from = getNodeCenter(nodes.find((n) => n.id === edge.from));
+            const to = getNodeCenter(nodes.find((n) => n.id === edge.to));
+            const midX = (from.x + to.x) / 2;
+            return (
+              <g key={`${edge.from}-${edge.to}`}>
+                <path d={`M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`}
+                  stroke="#86909c" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <circle cx={to.x - 3} cy={to.y} r="3" fill="#86909c" />
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* 节点 */}
+        {nodes.map((node) => {
+          const isEditing = editingUser[node.id];
+          const isGenerating = generatingNode === node.id;
+          const isSelected = selectedNode === node.id;
+          const userColor = isEditing ? isEditing.color : null;
+
+          return (
+            <div key={node.id} onClick={() => setSelectedNode(node.id)}
+              style={{
+                position: "absolute", left: node.x, top: node.y, width: 140, minHeight: 60,
+                borderRadius: 12, cursor: "pointer", transition: "box-shadow 0.2s",
+                background: "#191e26",
+                border: isEditing ? `2px solid ${userColor.border}` : isSelected ? "2px solid #a8a8a8" : "1px solid #363636",
+                boxShadow: isEditing ? `0 0 16px ${userColor.bg}` : isGenerating ? "0 0 20px rgba(59,130,246,0.3)" : "0 4px 12px rgba(0,0,0,0.3)",
+              }}
+            >
+              {/* 编辑者头像标识 */}
+              {isEditing && (
+                <div className="fade-in" style={{
+                  position: "absolute", top: -14, left: -14,
+                  width: 28, height: 28, borderRadius: "50%", background: userColor.border,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
+                  border: "2px solid #191e26", animation: "ripple 2s infinite",
+                  zIndex: 10,
+                }}>
+                  {isEditing.avatar}
+                </div>
+              )}
+
+              {/* 编辑者名称标签 */}
+              {isEditing && (
+                <div className="fade-in" style={{
+                  position: "absolute", top: -24, left: 18, fontSize: 11,
+                  color: userColor.border, fontWeight: 500, whiteSpace: "nowrap",
+                }}>
+                  {isEditing.name} 编辑中
+                </div>
+              )}
+
+              {/* 生成中动画 */}
+              {isGenerating && (
+                <div style={{
+                  position: "absolute", inset: -2, borderRadius: 14, overflow: "hidden",
+                  border: "2px solid transparent",
+                  background: "linear-gradient(90deg, transparent, rgba(59,130,246,0.5), transparent) border-box",
+                  backgroundSize: "200% 100%",
+                  animation: "generating 1.5s linear infinite",
+                  pointerEvents: "none",
+                }} />
+              )}
+
+              <div style={{ padding: "10px 12px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: 11, padding: "2px 6px", borderRadius: 4,
+                    background: node.type === "input" ? "rgba(16,185,129,0.15)" : node.type === "output" ? "rgba(139,92,246,0.15)" : "rgba(59,130,246,0.15)",
+                    color: node.type === "input" ? "#10B981" : node.type === "output" ? "#8B5CF6" : "#3B82F6",
+                  }}>
+                    {node.type === "input" ? "输入" : node.type === "output" ? "输出" : "处理"}
+                  </span>
+                  {isGenerating && <span style={{ fontSize: 10, color: "#3B82F6", animation: "pulse 1.5s infinite" }}>生成中...</span>}
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", marginBottom: 4 }}>{node.label}</p>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                  {Object.entries(node.params).slice(0, 2).map(([k, v]) => (
+                    <div key={k}>{k}: {v}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* 右侧面板 */}
+        {selectedNode && (
+          <div className="slide-up" style={{
+            position: "absolute", right: 16, top: 16, width: 280,
+            background: "rgba(25,30,38,0.95)", backdropFilter: "blur(16px)",
+            border: "1px solid #363636", borderRadius: 16, padding: 16,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+                {nodes.find((n) => n.id === selectedNode)?.label}
+              </span>
+              <button onClick={() => setSelectedNode(null)} style={{
+                background: "transparent", border: "none", color: "rgba(255,255,255,0.4)",
+                cursor: "pointer", fontSize: 16, width: 24, height: 24, display: "flex",
+                alignItems: "center", justifyContent: "center", borderRadius: 6,
+              }}>✕</button>
+            </div>
+
+            {editingUser[selectedNode] && (
+              <div style={{
+                padding: "8px 10px", borderRadius: 8, marginBottom: 12,
+                background: editingUser[selectedNode].color.bg,
+                border: `1px solid ${editingUser[selectedNode].color.border}30`,
+                display: "flex", alignItems: "center", gap: 8, fontSize: 12,
+              }}>
+                <span>{editingUser[selectedNode].avatar}</span>
+                <span style={{ color: editingUser[selectedNode].color.border }}>
+                  {editingUser[selectedNode].name} 正在编辑此节点
+                </span>
+              </div>
+            )}
+
+            {Object.entries(nodes.find((n) => n.id === selectedNode)?.params || {}).map(([key, val]) => (
+              <div key={key} style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 4 }}>{key}</label>
+                <input value={val} readOnly style={{
+                  width: "100%", height: 32, borderRadius: 8, border: "1px solid #363636",
+                  background: "#171717", color: "#fff", padding: "0 10px", fontSize: 13,
+                  outline: "none",
+                }} />
+              </div>
+            ))}
+
+            <button onClick={() => handleGenerate(selectedNode)} style={{
+              width: "100%", height: 36, borderRadius: 10, border: "none", cursor: "pointer",
+              background: generatingNode === selectedNode ? "#525252" : "#3B82F6",
+              color: "#fff", fontSize: 13, fontWeight: 500, marginTop: 8,
+              transition: "background 0.15s",
+              opacity: generatingNode === selectedNode ? 0.6 : 1,
+            }}
+              onMouseEnter={(e) => { if (generatingNode !== selectedNode) e.currentTarget.style.background = "#2563EB"; }}
+              onMouseLeave={(e) => { if (generatingNode !== selectedNode) e.currentTarget.style.background = "#3B82F6"; }}
+            >
+              {generatingNode === selectedNode ? "🔄 生成中..." : "▶ 运行生成"}
+            </button>
+          </div>
+        )}
+
+        {/* 左下角 - 图例 */}
+        <div style={{
+          position: "absolute", left: 16, bottom: 16, padding: 12, borderRadius: 12,
+          background: "rgba(25,30,38,0.9)", backdropFilter: "blur(12px)",
+          border: "1px solid #363636", fontSize: 11, color: "rgba(255,255,255,0.5)",
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>协作图例</span>
+          {onlineUsers.filter(u => u.id !== "u1").map((user) => (
+            <div key={user.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: user.color.border }} />
+              <span>{user.avatar} {user.name}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 右下角 - 缩放控件 */}
+        <div style={{
+          position: "absolute", right: 16, bottom: 16, display: "flex", gap: 2,
+          background: "rgba(25,30,38,0.9)", backdropFilter: "blur(12px)",
+          border: "1px solid #363636", borderRadius: 10, padding: 4,
+        }}>
+          {["−", "100%", "+", "⊞"].map((label, i) => (
+            <button key={i} style={{
+              width: label === "100%" ? 48 : 32, height: 32, borderRadius: 8, border: "none",
+              background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.15s",
+            }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// App 根组件
+// ============================================================
+function App() {
+  const [page, setPage] = useState("list");
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type) => {
+    setToast({ message, type, key: Date.now() });
+  }, []);
+
+  return (
+    <AppContext.Provider value={{ setPage, showToast }}>
+      {page === "list" && <ProjectListPage />}
+      {page === "canvas" && <CanvasPage />}
+      {toast && <Toast key={toast.key} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </AppContext.Provider>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
 </html>
