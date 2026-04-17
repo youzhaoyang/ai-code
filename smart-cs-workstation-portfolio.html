@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能客服工作台 - AI 驱动的售后服务体验升级</title>
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-strong: rgba(255, 255, 255, 0.92);
+        --ink: #16191f;
+        --muted: #5e6472;
+        --line: rgba(22, 25, 31, 0.08);
+        --blue: #1f5eff;
+        --blue-deep: #1137a5;
+        --orange: #ff6a3d;
+        --gold: #f0bf4c;
+        --green: #0fa968;
+        --green-deep: #087a4a;
+        --shadow: 0 24px 80px rgba(17, 28, 63, 0.12);
+        --radius-xl: 32px;
+        --radius-lg: 24px;
+        --radius-md: 18px;
+        --content-width: min(1200px, calc(100vw - 48px));
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: "SF Pro Display", "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 15%, rgba(31, 94, 255, 0.14), transparent 28%),
+          radial-gradient(circle at 80% 8%, rgba(255, 106, 61, 0.12), transparent 24%),
+          linear-gradient(180deg, #f7f3ec 0%, #f4efe7 48%, #efe7dc 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(22, 25, 31, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(22, 25, 31, 0.02) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 86%);
+      }
+
+      a { color: inherit; }
+      h1, h2, h3, h4, p { margin: 0; }
+
+      .shell {
+        width: var(--content-width);
+        margin: 0 auto;
+        padding: 32px 0 96px;
+      }
+
+      /* ─── Top Bar ─── */
+      .topbar {
+        position: sticky;
+        top: 14px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 14px 18px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 10px 30px rgba(22, 25, 31, 0.08);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .brand-mark {
+        width: 14px; height: 14px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, var(--blue) 0%, var(--orange) 100%);
+        box-shadow: 0 0 0 6px rgba(31, 94, 255, 0.08);
+      }
+
+      .nav { display: flex; gap: 10px; flex-wrap: wrap; }
+      .nav a {
+        padding: 10px 14px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 14px;
+        transition: all .2s;
+      }
+      .nav a:hover { color: var(--ink); background: rgba(22, 25, 31, 0.05); }
+
+      /* ─── Eyebrow ─── */
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid rgba(31, 94, 255, 0.12);
+        border-radius: 999px;
+        color: var(--blue-deep);
+        background: rgba(31, 94, 255, 0.06);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .eyebrow-orange { border-color: rgba(255, 106, 61, 0.18); color: #c44a1a; background: rgba(255, 106, 61, 0.06); }
+      .eyebrow-green { border-color: rgba(15, 169, 104, 0.18); color: var(--green-deep); background: rgba(15, 169, 104, 0.06); }
+
+      /* ─── Hero ─── */
+      .hero {
+        position: relative;
+        overflow: hidden;
+        padding: 42px;
+        border-radius: 40px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78)),
+          linear-gradient(135deg, rgba(31, 94, 255, 0.06), rgba(255, 106, 61, 0.04));
+        box-shadow: var(--shadow);
+      }
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -120px; top: -90px;
+        width: 340px; height: 340px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(31, 94, 255, 0.18), transparent 70%);
+      }
+      .hero-grid {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.25fr 0.95fr;
+        gap: 28px;
+        margin-top: 24px;
+      }
+      .hero-copy h1 {
+        max-width: 560px;
+        font-size: clamp(36px, 5vw, 62px);
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+      }
+      .hero-copy .accent { color: var(--blue); }
+      .hero-copy p {
+        max-width: 58ch;
+        margin-top: 22px;
+        font-size: 17px;
+        line-height: 1.75;
+        color: var(--muted);
+      }
+      .hero-meta {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 26px;
+      }
+      .metric {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.68);
+      }
+      .metric strong { display: block; font-size: 26px; line-height: 1; letter-spacing: -0.04em; }
+      .metric span { display: block; margin-top: 6px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+      .hero-panel {
+        position: relative;
+        padding: 22px;
+        border-radius: 28px;
+        background: linear-gradient(180deg, #132856 0%, #0c1734 100%);
+        color: #f6f8ff;
+        overflow: hidden;
+      }
+      .hero-panel::before {
+        content: "";
+        position: absolute;
+        inset: auto -60px -90px auto;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(240, 191, 76, 0.45), transparent 68%);
+      }
+      .hero-panel small { display: block; color: rgba(246, 248, 255, 0.66); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .hero-panel h3 { margin-top: 12px; font-size: 26px; line-height: 1.2; letter-spacing: -0.04em; }
+      .hero-panel ul { margin: 18px 0 0; padding: 0; list-style: none; }
+      .hero-panel li {
+        display: flex; gap: 10px; align-items: flex-start; margin-top: 12px;
+        color: rgba(246, 248, 255, 0.82); line-height: 1.6; font-size: 14px;
+      }
+      .hero-panel li::before {
+        content: ""; flex: 0 0 10px; width: 10px; height: 10px; margin-top: 8px;
+        border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--orange));
+      }
+
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 30px;
+      }
+      .strip-card {
+        padding: 18px; border-radius: 22px;
+        background: rgba(255, 255, 255, 0.64); border: 1px solid var(--line);
+      }
+      .strip-card strong { display: block; font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue-deep); }
+      .strip-card p { margin-top: 10px; color: var(--muted); line-height: 1.65; font-size: 14px; }
+
+      /* ─── Section ─── */
+      .section {
+        margin-top: 28px; padding: 34px; border-radius: 36px;
+        background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(20px); box-shadow: 0 14px 50px rgba(22, 25, 31, 0.08);
+      }
+      .section-head {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: end;
+      }
+      .section-head h2 { font-size: clamp(24px, 3.2vw, 38px); line-height: 1.2; letter-spacing: -0.04em; }
+      .section-head p { max-width: 58ch; color: var(--muted); line-height: 1.75; }
+
+      /* ─── Screenshot ─── */
+      .img-showcase {
+        margin-top: 24px;
+        padding: 16px;
+        border-radius: 24px;
+        background: rgba(21, 30, 53, 0.95);
+        overflow: hidden;
+      }
+      .img-showcase img {
+        width: 100%;
+        display: block;
+        border-radius: 14px;
+      }
+      .img-showcase .img-caption {
+        display: flex; align-items: center; gap: 10px;
+        margin-top: 12px; padding: 0 4px;
+      }
+      .img-caption-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%; flex-shrink: 0;
+      }
+      .dot-blue { background: var(--blue); }
+      .dot-orange { background: var(--orange); }
+      .dot-green { background: var(--green); }
+      .dot-gold { background: var(--gold); }
+      .img-caption p { font-size: 13px; color: rgba(238, 242, 255, 0.72); margin: 0; line-height: 1.5; }
+
+      .img-showcase-light {
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+      }
+      .img-showcase-light .img-caption p { color: var(--muted); }
+
+      /* ─── Two-col image + text ─── */
+      .img-text-row {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 16px;
+        margin-top: 22px;
+        align-items: start;
+      }
+      .img-text-row-reverse {
+        grid-template-columns: 0.85fr 1.15fr;
+      }
+      .img-text-row .img-block {
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      .img-text-row .img-block img {
+        width: 100%;
+        display: block;
+      }
+      .img-text-row .text-block {
+        padding: 22px;
+        border-radius: 22px;
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+      }
+      .img-text-row .text-block h3 { font-size: 22px; letter-spacing: -0.04em; }
+      .img-text-row .text-block p { margin-top: 10px; color: var(--muted); line-height: 1.72; font-size: 14px; }
+
+      /* ─── Gallery grid ─── */
+      .gallery-2x2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 22px;
+      }
+      .gallery-item {
+        border-radius: 20px;
+        overflow: hidden;
+        background: #fafafa;
+        border: 1px solid var(--line);
+        transition: transform .25s, box-shadow .25s;
+      }
+      .gallery-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px rgba(22, 25, 31, 0.12);
+      }
+      .gallery-item img { width: 100%; display: block; }
+      .gallery-item .g-caption {
+        padding: 12px 16px;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .gallery-item .g-caption p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.5; }
+
+      /* ─── Method Cards ─── */
+      .method-grid {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px; margin-top: 28px;
+      }
+      .method-card {
+        position: relative; min-height: 180px; padding: 24px;
+        border-radius: 26px; background: var(--panel-strong); border: 1px solid var(--line); overflow: hidden;
+      }
+      .method-card:nth-child(1) { background: linear-gradient(180deg, rgba(31, 94, 255, 0.08), rgba(255, 255, 255, 0.96)); }
+      .method-card:nth-child(2) { background: linear-gradient(180deg, rgba(255, 106, 61, 0.08), rgba(255, 255, 255, 0.96)); }
+      .method-card:nth-child(3) { background: linear-gradient(180deg, rgba(240, 191, 76, 0.12), rgba(255, 255, 255, 0.96)); }
+      .method-card:nth-child(4) { background: linear-gradient(180deg, rgba(15, 169, 104, 0.08), rgba(255, 255, 255, 0.96)); }
+      .method-index {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 42px; height: 42px; border-radius: 14px; background: rgba(22, 25, 31, 0.06); font-weight: 700;
+      }
+      .method-card h3 { margin-top: 18px; font-size: 22px; line-height: 1.15; letter-spacing: -0.04em; }
+      .method-card p { margin-top: 12px; font-size: 13.5px; line-height: 1.72; color: var(--muted); }
+      .method-card p strong { color: var(--ink); }
+
+      /* ─── Story rail ─── */
+      .story-rail {
+        display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px; margin-top: 18px;
+      }
+      .story-step {
+        position: relative; padding: 18px; border-radius: 20px;
+        background: linear-gradient(180deg, rgba(31, 94, 255, 0.08), rgba(31, 94, 255, 0.02));
+        border: 1px solid rgba(31, 94, 255, 0.12);
+      }
+      .story-step span { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue-deep); }
+      .story-step strong { display: block; margin-top: 8px; font-size: 15px; line-height: 1.4; }
+      .story-step p { margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+      /* ─── Expression Grid ─── */
+      .expr-grid {
+        display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 28px;
+      }
+      .expr-block {
+        padding: 22px; border-radius: 28px;
+        background: var(--panel-strong); border: 1px solid var(--line);
+      }
+      .expr-block h3 { font-size: 22px; letter-spacing: -0.04em; }
+      .expr-block p { margin-top: 10px; color: var(--muted); line-height: 1.72; }
+
+      /* ─── Case ─── */
+      .case-shell {
+        display: grid; grid-template-columns: 260px 1fr; gap: 18px; margin-top: 26px;
+      }
+      .case-toc, .case-main {
+        padding: 22px; border-radius: 28px;
+        background: var(--panel-strong); border: 1px solid var(--line);
+      }
+      .case-toc h3 { font-size: 20px; letter-spacing: -0.04em; }
+      .case-toc ol { margin: 16px 0 0; padding-left: 18px; color: var(--muted); line-height: 1.9; }
+      .case-chunk + .case-chunk { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+      .case-label { color: var(--orange); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+      .case-main h3 { margin-top: 8px; font-size: 22px; letter-spacing: -0.04em; }
+      .case-main p { margin-top: 10px; color: var(--muted); line-height: 1.75; font-size: 15px; }
+
+      /* ─── Result cards ─── */
+      .result-grid {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px; margin-top: 18px;
+      }
+      .result-card {
+        padding: 16px 18px; border-radius: 20px;
+        background: linear-gradient(180deg, rgba(240, 191, 76, 0.14), rgba(255, 255, 255, 0.98));
+        border: 1px solid rgba(240, 191, 76, 0.28);
+      }
+      .result-card strong { display: block; font-size: 30px; letter-spacing: -0.04em; }
+      .result-card span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+      .rc-blue { background: linear-gradient(180deg, rgba(31, 94, 255, 0.10), rgba(255, 255, 255, 0.98)); border: 1px solid rgba(31, 94, 255, 0.18); }
+      .rc-green { background: linear-gradient(180deg, rgba(15, 169, 104, 0.10), rgba(255, 255, 255, 0.98)); border: 1px solid rgba(15, 169, 104, 0.18); }
+      .rc-orange { background: linear-gradient(180deg, rgba(255, 106, 61, 0.10), rgba(255, 255, 255, 0.98)); border: 1px solid rgba(255, 106, 61, 0.18); }
+
+      /* ─── Persona ─── */
+      .persona-grid {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px;
+      }
+      .persona-card { padding: 20px; border-radius: 22px; background: var(--panel-strong); border: 1px solid var(--line); }
+      .persona-card .role { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+      .role-user { color: var(--blue-deep); }
+      .role-agent { color: var(--orange); }
+      .role-biz { color: var(--green-deep); }
+      .persona-card h4 { margin-top: 10px; font-size: 18px; letter-spacing: -0.03em; }
+      .persona-card p { margin-top: 8px; font-size: 13px; color: var(--muted); line-height: 1.65; }
+      .persona-card ul { margin: 10px 0 0; padding-left: 16px; font-size: 13px; color: var(--muted); line-height: 1.75; }
+
+      /* ─── Insight ─── */
+      .insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+      .insight-card { padding: 20px; border-radius: 22px; background: var(--panel-strong); border: 1px solid var(--line); }
+      .insight-tag { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
+      .tag-problem { background: rgba(255, 106, 61, 0.10); color: #c44a1a; }
+      .tag-opportunity { background: rgba(31, 94, 255, 0.10); color: var(--blue-deep); }
+      .insight-card h4 { margin-top: 10px; font-size: 17px; letter-spacing: -0.03em; }
+      .insight-card p { margin-top: 8px; font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+      /* ─── Flow ─── */
+      .flow-container {
+        margin-top: 22px; padding: 22px; border-radius: 24px;
+        background: linear-gradient(145deg, #112451, #0d1733); color: #eef2ff;
+      }
+      .flow-container small { display: block; color: rgba(238, 242, 255, 0.56); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .flow-container h3 { margin-top: 8px; font-size: 22px; letter-spacing: -0.04em; }
+      .flow-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+      .flow-step {
+        padding: 14px 12px; border-radius: 16px;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;
+      }
+      .flow-step .step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--orange)); color: #fff; font-size: 12px; font-weight: 700;
+      }
+      .flow-step strong { display: block; margin-top: 8px; font-size: 13px; line-height: 1.35; }
+      .flow-step p { margin-top: 6px; font-size: 11px; color: rgba(238, 242, 255, 0.6); line-height: 1.45; }
+
+      /* ─── Architecture ─── */
+      .arch-container { margin-top: 22px; padding: 24px; border-radius: 24px; background: var(--panel-strong); border: 1px solid var(--line); }
+      .arch-layers { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+      .arch-layer { display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: stretch; }
+      .arch-label {
+        padding: 14px; border-radius: 16px; font-weight: 700; font-size: 13px;
+        display: flex; align-items: center; justify-content: center; text-align: center; letter-spacing: 0.04em;
+      }
+      .arch-label-blue { background: rgba(31, 94, 255, 0.10); color: var(--blue-deep); }
+      .arch-label-orange { background: rgba(255, 106, 61, 0.10); color: #c44a1a; }
+      .arch-label-green { background: rgba(15, 169, 104, 0.10); color: var(--green-deep); }
+      .arch-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+      .arch-module { padding: 12px 14px; border-radius: 14px; background: rgba(22, 25, 31, 0.03); border: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--muted); }
+      .arch-module strong { display: block; font-size: 14px; color: var(--ink); margin-bottom: 4px; }
+
+      /* ─── Matrix table ─── */
+      .matrix-container { margin-top: 20px; overflow: hidden; border-radius: 20px; border: 1px solid var(--line); }
+      .matrix-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .matrix-table th { padding: 14px 16px; background: rgba(31, 94, 255, 0.06); font-weight: 600; text-align: left; border-bottom: 1px solid var(--line); font-size: 13px; letter-spacing: 0.04em; }
+      .matrix-table th:first-child { background: rgba(255, 106, 61, 0.06); }
+      .matrix-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--muted); line-height: 1.6; vertical-align: top; }
+      .matrix-table td:first-child { font-weight: 600; color: var(--ink); background: rgba(255, 106, 61, 0.02); white-space: nowrap; }
+      .matrix-table tr:last-child td { border-bottom: none; }
+
+      /* ─── KPI ─── */
+      .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
+      .kpi-card { padding: 20px; border-radius: 22px; text-align: center; }
+      .kpi-card strong { display: block; font-size: 36px; letter-spacing: -0.04em; line-height: 1; }
+      .kpi-card .kpi-label { display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
+      .kpi-card span { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+      .kpi-blue { background: linear-gradient(180deg, rgba(31, 94, 255, 0.10), rgba(31, 94, 255, 0.03)); border: 1px solid rgba(31, 94, 255, 0.14); }
+      .kpi-blue strong { color: var(--blue); }
+      .kpi-orange { background: linear-gradient(180deg, rgba(255, 106, 61, 0.10), rgba(255, 106, 61, 0.03)); border: 1px solid rgba(255, 106, 61, 0.14); }
+      .kpi-orange strong { color: var(--orange); }
+      .kpi-green { background: linear-gradient(180deg, rgba(15, 169, 104, 0.10), rgba(15, 169, 104, 0.03)); border: 1px solid rgba(15, 169, 104, 0.14); }
+      .kpi-green strong { color: var(--green); }
+      .kpi-gold { background: linear-gradient(180deg, rgba(240, 191, 76, 0.14), rgba(240, 191, 76, 0.04)); border: 1px solid rgba(240, 191, 76, 0.22); }
+      .kpi-gold strong { color: #b88c18; }
+
+      /* ─── Reflection ─── */
+      .reflection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
+      .reflection-card { padding: 20px; border-radius: 22px; background: var(--panel-strong); border: 1px solid var(--line); }
+      .reflection-card h4 { font-size: 17px; letter-spacing: -0.03em; }
+      .reflection-card p { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+      .footer-note { margin-top: 16px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+      /* ─── Responsive ─── */
+      @media (max-width: 1080px) {
+        .hero-grid, .section-head, .expr-grid, .case-shell, .img-text-row, .img-text-row-reverse { grid-template-columns: 1fr; }
+        .method-grid, .strip, .hero-meta, .result-grid, .story-rail, .persona-grid, .insight-grid, .kpi-grid, .reflection-grid, .gallery-2x2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .flow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+      @media (max-width: 720px) {
+        .shell { width: min(100vw - 24px, 1200px); padding-top: 18px; }
+        .topbar { border-radius: 26px; align-items: flex-start; flex-direction: column; }
+        .hero, .section { padding: 22px; border-radius: 28px; }
+        .method-grid, .strip, .hero-meta, .result-grid, .story-rail, .persona-grid, .insight-grid, .kpi-grid, .reflection-grid, .gallery-2x2 { grid-template-columns: 1fr; }
+        .hero-copy h1, .section-head h2 { max-width: none; }
+        .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .arch-layer { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+
+      <!-- ═══════════════ TOP BAR ═══════════════ -->
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>Design Portfolio / CS Workstation</span>
+        </div>
+        <nav class="nav">
+          <a href="#hero">封面</a>
+          <a href="#background">业务背景</a>
+          <a href="#strategy">设计策略</a>
+          <a href="#solution">核心方案</a>
+          <a href="#result">成果复盘</a>
+        </nav>
+      </header>
+
+      <!-- ═══════════════ HERO / 封面 ═══════════════ -->
+      <section class="hero" id="hero">
+        <span class="eyebrow">2025 Design Review / After-Sales Experience</span>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <h1>智能客服工作台<br/><span class="accent">AI 驱动售后体验升级</span></h1>
+            <p>
+              以"信息前置 + 意图识别 + 卡片化交互"为核心策略，重构客服坐席的工作台体验。
+              让客服从"被动查询"变为"主动服务"，将分散在多个系统的用户数据、订单、
+              售后记录聚合为一屏可读的信息视图，同时引入 AI 能力实现意图识别与方案自动推荐。
+            </p>
+            <div class="hero-meta">
+              <div class="metric"><strong>12→7.8min</strong><span>平均处理时长 -35%</span></div>
+              <div class="metric"><strong>61→83%</strong><span>首次解决率</span></div>
+              <div class="metric"><strong>3.9→4.7</strong><span>用户满意度</span></div>
+              <div class="metric"><strong>-40%</strong><span>对话轮次降幅</span></div>
+            </div>
+          </div>
+
+          <aside class="hero-panel">
+            <small>My Role & Contribution</small>
+            <h3>从问题定义到方案落地的全链路设计</h3>
+            <ul>
+              <li>负责客服工作台信息架构设计与交互方案</li>
+              <li>主导 AI 辅助能力的产品化设计（意图识别、智能推荐、风险预警）</li>
+              <li>设计售后卡片体系，覆盖 3 种服务方式 x 4 种服务类型的完整矩阵</li>
+              <li>协同产品、研发、运营完成方案迭代与上线验证</li>
+            </ul>
+          </aside>
+        </div>
+
+        <!-- Hero: 工作台全景图 -->
+        <div class="img-showcase" style="margin-top:28px;">
+          <img src="images/坐席工作台-卡片推送.png" alt="智能客服工作台全景" />
+          <div class="img-caption">
+            <span class="img-caption-dot dot-blue"></span>
+            <p>智能客服工作台全景：左侧会话列表 + 中间智能对话 + 右侧信息聚合面板，AI 驱动的一站式服务体验</p>
+          </div>
+        </div>
+
+        <div class="strip">
+          <div class="strip-card"><strong>问题</strong><p>客服处理售后需在 4+ 系统间反复切换查询，平均处理时长高，用户体验差。</p></div>
+          <div class="strip-card"><strong>机会</strong><p>将用户全景信息聚合到一屏，结合 AI 意图识别，实现从被动查询到主动服务的转变。</p></div>
+          <div class="strip-card"><strong>方案</strong><p>卡片化信息架构 + AI 意图识别引擎 + 智能推荐系统，打造一站式坐席工作台。</p></div>
+          <div class="strip-card"><strong>成果</strong><p>AHT 从 12min 降至 7.8min，FCR 从 61% 提升至 83%，CSAT 从 3.9 升至 4.7。</p></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ BACKGROUND / 业务背景 ═══════════════ -->
+      <section class="section" id="background">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow eyebrow-orange">Business Context</span>
+            <h2>业务背景：售后服务效率与体验的双重困境</h2>
+          </div>
+          <p>
+            在大型电商平台的售后场景中，客服坐席面对的不仅是用户的问题，还有分散在多个系统中的碎片化信息。
+            用户等待时间长、客服操作路径深、风险判断缺依据，成为制约服务效率与满意度的三大核心问题。
+          </p>
+        </div>
+
+        <!-- 角色画像 -->
+        <div class="persona-grid">
+          <div class="persona-card">
+            <span class="role role-user">End User</span>
+            <h4>终端用户</h4>
+            <p>购买了产品后遇到安装、故障、退换等问题，期望快速获得清晰的解决方案。</p>
+            <ul>
+              <li>等待时间长，反复描述问题</li>
+              <li>不知道该选上门、寄修还是到店</li>
+              <li>服务进度不透明</li>
+            </ul>
+          </div>
+          <div class="persona-card">
+            <span class="role role-agent">CS Agent</span>
+            <h4>客服坐席</h4>
+            <p>需要在有限时间内准确判断用户意图并给出最优售后方案。</p>
+            <ul>
+              <li>在 4+ 系统间切换查询用户信息</li>
+              <li>无法快速判断用户风险等级</li>
+              <li>售后方案选择依赖经验</li>
+            </ul>
+          </div>
+          <div class="persona-card">
+            <span class="role role-biz">Platform</span>
+            <h4>平台/企业</h4>
+            <p>追求更低的服务成本和更高的满意度，同时需要防范恶意索赔风险。</p>
+            <ul>
+              <li>单次服务成本偏高</li>
+              <li>缺少系统化的风险识别机制</li>
+              <li>服务资源调度效率低</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 用户研究过程 -->
+        <div class="flow-container" style="margin-top:22px;">
+          <small>Research Method</small>
+          <h3>用户研究：3 种方法交叉验证</h3>
+          <div class="flow-steps" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <div class="flow-step">
+              <span class="step-num">1</span>
+              <strong>跟坐观察 x 5 天</strong>
+              <p>嵌入真实客服工位，记录完整操作链路和系统切换行为</p>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">2</span>
+              <strong>会话日志分析 x 500+</strong>
+              <p>抽样分析对话轮次、意图识别准确度、服务路径分布</p>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">3</span>
+              <strong>深度访谈 x 8 人</strong>
+              <p>覆盖新手/熟练/资深三类客服，提炼差异化痛点</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 背景配图: 国外用户提醒 - 信息密度分析 -->
+        <div class="img-text-row">
+          <div class="img-block">
+            <img src="images/国外用户提醒.png" alt="工作台信息密度分析" />
+          </div>
+          <div class="text-block">
+            <span class="eyebrow" style="margin-bottom:14px;">Field Observation</span>
+            <h3>跟坐发现：78% 的操作时间花在"找信息"上</h3>
+            <p>
+              跟坐观察中发现，客服接待一位国外用户时，需要同时关注左侧会话列表、中间聊天窗口、
+              右侧信息面板三个区域。仅右侧面板就需要承载用户基本信息、订单详情、设备信息、服务记录等多个模块。
+            </p>
+            <p>
+              在改版前，这些信息分散在 CRM、OMS、售后系统等 4+ 个平台中。
+              日志分析显示，<strong>每处理一个工单平均需要切换 6.3 次系统标签页</strong>，
+              其中 78% 的时间消耗在查找和确认信息上，而非实际解决问题。
+            </p>
+            <p style="margin-top:14px; font-weight:600; color:var(--orange);">
+              核心矛盾：客服的认知资源被"找信息"耗尽，而非用于"解决问题"。
+            </p>
+          </div>
+        </div>
+
+        <!-- 痛点与机会 -->
+        <div class="insight-grid">
+          <div class="insight-card">
+            <span class="insight-tag tag-problem">Pain Point 01</span>
+            <h4>信息碎片化：每单切换 6.3 次系统</h4>
+            <p>用户画像、订单详情、服务记录、赔付历史散落在 CRM、OMS、售后系统等 4+ 个平台。日志分析显示，客服每处理一个工单平均切换 6.3 次系统标签页，78% 的时间在"找信息"而非"解决问题"。</p>
+          </div>
+          <div class="insight-card">
+            <span class="insight-tag tag-problem">Pain Point 02</span>
+            <h4>意图判断低效：平均 3.7 轮才能锁定需求</h4>
+            <p>会话日志分析显示，用户描述通常模糊（如"手机有问题"），客服平均需要 3.7 轮追问才能锁定服务类型（安装/维修/退换）和服务方式（上门/寄修/到店）。新手客服甚至需要 5+ 轮。对话轮次越多，用户流失风险越大。</p>
+          </div>
+          <div class="insight-card">
+            <span class="insight-tag tag-opportunity">Opportunity 01</span>
+            <h4>一屏信息聚合</h4>
+            <p>将用户全景数据整合到工作台右侧面板，以卡片化方式结构化展示，让客服"一眼看清"用户背景。</p>
+          </div>
+          <div class="insight-card">
+            <span class="insight-tag tag-opportunity">Opportunity 02</span>
+            <h4>AI 驱动主动服务</h4>
+            <p>引入 NLP 意图识别，从对话中自动提取服务需求，结合用户上下文主动推荐最优解决方案。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ STRATEGY / 设计策略 ═══════════════ -->
+      <section class="section" id="strategy">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Design Strategy</span>
+            <h2>设计策略：信息前置、意图驱动、卡片承载</h2>
+          </div>
+          <p>
+            围绕"让客服在正确的时间看到正确的信息"这一核心原则，设计了三层递进策略：
+            信息层做聚合降噪，智能层做意图识别与推荐，交互层用卡片实现一键操作。
+          </p>
+        </div>
+
+        <div class="method-grid">
+          <article class="method-card">
+            <span class="method-index">01</span>
+            <h3>一屏可读</h3>
+            <p><strong>设计原则：</strong>降低认知负荷，而非堆砌信息。将 4+ 系统的碎片数据按"用户画像 - 订单 - 风险 - 服务记录"的优先级重组阅读动线，确保客服在一屏内完成判断。<br/><strong>取舍：</strong>砍掉了 60% 的非核心字段，只保留与当前工单直接相关的信息。</p>
+          </article>
+          <article class="method-card">
+            <span class="method-index">02</span>
+            <h3>风险先于需求</h3>
+            <p><strong>设计原则：</strong>关键信息前置于操作之前。跟坐发现客服常在服务完成后才发现用户有恶意索赔记录。将风险标签提升到会话接入的第一秒——客服还没开口，风险等级已可见。<br/><strong>取舍：</strong>牺牲了部分面板空间，换取决策安全感。</p>
+          </article>
+          <article class="method-card">
+            <span class="method-index">03</span>
+            <h3>AI 辅助不替代</h3>
+            <p><strong>设计原则：</strong>AI 做推荐，人做决策。意图识别结果以"建议卡片"形式呈现，客服可一键采纳也可手动修改。AI 置信度低于阈值时自动降级为辅助提示，而非强制推荐。<br/><strong>取舍：</strong>放弃了"全自动派单"方案，保留人工确认环节。</p>
+          </article>
+          <article class="method-card">
+            <span class="method-index">04</span>
+            <h3>操作收敛于卡片</h3>
+            <p><strong>设计原则：</strong>把"看 - 判断 - 操作"的链路压缩到一张卡片内。每张售后卡片同时承载信息展示和操作入口，客服无需跳转其他系统即可发起、跟进或转派。<br/><strong>取舍：</strong>牺牲了信息密度上限，换取操作路径最短化。</p>
+          </article>
+        </div>
+
+        <!-- 方案比选：AI 介入方式的三种候选 -->
+        <div class="flow-container" style="margin-top:24px;">
+          <small>Design Exploration</small>
+          <h3>方案比选：AI 以什么姿态介入坐席工作流？</h3>
+          <div class="flow-steps" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top:18px;">
+            <div class="flow-step" style="border-color:rgba(255,255,255,0.06);">
+              <strong>方案 A：弹窗式</strong>
+              <p>AI 识别到意图后弹出浮窗推荐方案。问题：打断客服正在进行的对话操作，跟坐观察中被抱怨最多。</p>
+              <span style="display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(255,106,61,0.2);color:#ff6a3d;">淘汰</span>
+            </div>
+            <div class="flow-step" style="border-color:rgba(255,255,255,0.06);">
+              <strong>方案 B：对话内嵌式</strong>
+              <p>在聊天气泡之间插入推荐卡片。V1 原型测试发现：卡片被大量消息淹没，客服回滚查找率高达 42%。</p>
+              <span style="display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(255,106,61,0.2);color:#ff6a3d;">淘汰</span>
+            </div>
+            <div class="flow-step" style="border:1px solid rgba(240,191,76,0.5);background:rgba(240,191,76,0.08);">
+              <strong>方案 C：右侧面板常驻式</strong>
+              <p>AI 推荐内容固定在右侧面板，不侵入对话区。客服在需要时自然扫视，操作路径最短，认知干扰最低。</p>
+              <span style="display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(240,191,76,0.2);color:#f0bf4c;">采纳</span>
+            </div>
+          </div>
+          <p style="margin-top:14px; font-size:13px; color:rgba(238,242,255,0.6); line-height:1.65;">
+            决策依据：跟坐观察 + V1 原型灰度测试数据。方案 C 的任务完成率比 B 高 18%，且客服主观满意度评分最高（4.3 vs 3.1 vs 2.6）。
+          </p>
+        </div>
+
+        <!-- 策略配图: 近90天赔付 - 展示"风险前置"策略 -->
+        <div class="img-text-row img-text-row-reverse" style="margin-top:24px;">
+          <div class="text-block">
+            <span class="eyebrow eyebrow-orange" style="margin-bottom:14px;">Strategy in Action</span>
+            <h3>风险前置：赔付记录一张卡片看清</h3>
+            <p>
+              策略 02 "风险前置"的具体落地。右侧面板自动加载用户近 90 天的赔付历史，
+              包括赔付次数、累计金额、赔付原因分布。
+            </p>
+            <p>
+              高频赔付用户会触发风险预警标签，辅助客服在处理新工单时做出更审慎的判断。
+              这个设计有效减少了恶意索赔率，同时保障了正常用户的服务效率。
+            </p>
+            <div class="result-grid" style="margin-top:16px;">
+              <div class="result-card"><strong>90天</strong><span>赔付历史窗口</span></div>
+              <div class="result-card"><strong>1张</strong><span>卡片替代多系统查询</span></div>
+              <div class="result-card"><strong>3级</strong><span>低/中/高风险标记</span></div>
+            </div>
+          </div>
+          <div class="img-block">
+            <img src="images/近90天赔付卡片.png" alt="近90天赔付卡片" />
+          </div>
+        </div>
+
+        <!-- 信息架构 -->
+        <div class="arch-container">
+          <h3>信息架构：工作台的卡片层级与阅读优先级</h3>
+          <p style="margin-top:8px; color:var(--muted); font-size:14px; line-height:1.65;">
+            右侧信息面板的内容并非平铺罗列，而是按照客服的实际决策顺序设计了三层信息优先级。越靠上的信息越影响客服的第一判断。
+          </p>
+          <div class="arch-layers">
+            <div class="arch-layer">
+              <div class="arch-label arch-label-orange">P0 风险层</div>
+              <div class="arch-modules">
+                <div class="arch-module"><strong>国外用户标记</strong>会话接入即置顶，影响服务策略选择</div>
+                <div class="arch-module"><strong>赔付风险标签</strong>近 90 天赔付记录 + 三级风险色标</div>
+                <div class="arch-module"><strong>异常行为提示</strong>短期高频投诉、同设备多账号等</div>
+              </div>
+            </div>
+            <div class="arch-layer">
+              <div class="arch-label arch-label-blue">P1 上下文层</div>
+              <div class="arch-modules">
+                <div class="arch-module"><strong>用户画像</strong>VIP 等级 / 历史订单数 / 累计消费</div>
+                <div class="arch-module"><strong>当前订单</strong>商品信息 / 物流状态 / 保修期</div>
+                <div class="arch-module"><strong>服务记录</strong>历史工单 / 上次服务方式 / 满意度</div>
+              </div>
+            </div>
+            <div class="arch-layer">
+              <div class="arch-label arch-label-green">P2 操作层</div>
+              <div class="arch-modules">
+                <div class="arch-module"><strong>AI 推荐卡片</strong>意图识别结果 + 售后方案建议</div>
+                <div class="arch-module"><strong>门店推荐</strong>基于地址的附近门店列表</div>
+                <div class="arch-module"><strong>快捷操作</strong>一键发起工单 / 转派 / 预约</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 服务流程 -->
+        <div class="flow-container">
+          <small>Core User Flow</small>
+          <h3>核心服务流程：从接入到闭环</h3>
+          <div class="flow-steps">
+            <div class="flow-step"><span class="step-num">1</span><strong>用户接入</strong><p>自动加载画像与风险标签</p></div>
+            <div class="flow-step"><span class="step-num">2</span><strong>信息聚合</strong><p>右侧面板展示订单、设备、记录</p></div>
+            <div class="flow-step"><span class="step-num">3</span><strong>意图识别</strong><p>AI 分析对话，锁定服务类型</p></div>
+            <div class="flow-step"><span class="step-num">4</span><strong>方案推荐</strong><p>推送售后卡片 / 推荐门店</p></div>
+            <div class="flow-step"><span class="step-num">5</span><strong>一键操作</strong><p>客服在卡片上直接发起服务</p></div>
+            <div class="flow-step"><span class="step-num">6</span><strong>进度追踪</strong><p>服务状态实时推送至工作台</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SOLUTION / 核心方案详解 ═══════════════ -->
+      <section class="section" id="solution">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow eyebrow-green">Key Solutions</span>
+            <h2>核心方案：5 个设计模块的详细拆解</h2>
+          </div>
+          <p>
+            每个模块都针对一个具体的业务痛点，从用户识别、风险判断、方案推荐、门店匹配到服务跟进，
+            形成完整的售后服务体验闭环。以下展示每个模块的设计细节与界面实现。
+          </p>
+        </div>
+
+        <!-- ──── Module 01: 国外用户提醒 ──── -->
+        <div class="case-shell">
+          <aside class="case-toc">
+            <h3>Module 01</h3>
+            <ol>
+              <li>用户身份自动识别</li>
+              <li>风险标签前置展示</li>
+              <li>服务策略差异化</li>
+            </ol>
+            <p class="footer-note">系统在会话接入时自动识别用户属性，将特殊标签前置到客服视野。</p>
+          </aside>
+          <div class="case-main">
+            <div class="case-chunk">
+              <span class="case-label">用户识别与智能提醒</span>
+              <h3>让客服在开口前就了解"对面是谁"</h3>
+              <p>
+                当用户进入会话时，系统自动识别用户身份属性（国内/国外、VIP 等级、历史行为特征），
+                并以醒目标签展示在聊天窗口顶部和右侧面板中。国外用户会触发专属提醒，
+                提示客服注意时区、语言和物流差异。
+              </p>
+              <div class="result-grid">
+                <div class="result-card rc-blue"><strong>自动</strong><span>用户属性自动加载，减少 3-5 步操作</span></div>
+                <div class="result-card rc-orange"><strong>前置</strong><span>风险标签在对话前即可见</span></div>
+                <div class="result-card rc-green"><strong>差异化</strong><span>根据类型匹配不同服务流程</span></div>
+              </div>
+            </div>
+            <div class="case-chunk">
+              <div class="img-showcase img-showcase-light" style="margin-top:0;">
+                <img src="images/国外用户提醒.png" alt="国外用户提醒" />
+                <div class="img-caption">
+                  <span class="img-caption-dot dot-blue"></span>
+                  <p>国外用户自动识别：左侧标记用户属性，中间展示 AI 推荐回复，右侧聚合用户全景信息</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ──── Module 02: 赔付风险 ──── -->
+        <div class="case-shell" style="margin-top:22px;">
+          <aside class="case-toc">
+            <h3>Module 02</h3>
+            <ol>
+              <li>赔付记录自动聚合</li>
+              <li>金额与频次可视化</li>
+              <li>风险等级自动判定</li>
+            </ol>
+            <p class="footer-note">将分散的赔付数据整合为一张卡片，让客服快速判断诉求合理性。</p>
+          </aside>
+          <div class="case-main">
+            <div class="case-chunk">
+              <span class="case-label">赔付风险前置</span>
+              <h3>近 90 天赔付记录，一张卡片看清风险</h3>
+              <p>
+                右侧面板自动加载用户近 90 天的赔付历史，包括赔付次数、累计金额、原因分布。
+                高频赔付用户触发风险预警标签，辅助客服做出更审慎的判断。
+              </p>
+            </div>
+            <div class="case-chunk">
+              <div class="img-showcase img-showcase-light" style="margin-top:0;">
+                <img src="images/近90天赔付卡片.png" alt="近90天赔付卡片" />
+                <div class="img-caption">
+                  <span class="img-caption-dot dot-orange"></span>
+                  <p>赔付风险卡片：右侧展示赔付历史明细与金额统计，中间对话区域 AI 自动推荐处理策略</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ──── Module 03: 售后方案矩阵 ──── -->
+        <div class="case-shell" style="margin-top:22px;">
+          <aside class="case-toc">
+            <h3>Module 03</h3>
+            <ol>
+              <li>3x4 售后方案矩阵</li>
+              <li>智能推荐最优方案</li>
+              <li>一键发起服务工单</li>
+            </ol>
+            <p class="footer-note">覆盖"上门/寄修/到店"x"安装/维修/退货/换货"的完整组合。</p>
+          </aside>
+          <div class="case-main">
+            <div class="case-chunk">
+              <span class="case-label">售后方案矩阵</span>
+              <h3>3 种方式 x 4 种类型，全场景覆盖的售后卡片体系</h3>
+              <p>
+                信息密度最高的模块。根据产品类型、故障情况、用户位置和保修状态，
+                系统从 12 种组合中智能匹配最优方案，以结构化卡片展示。
+              </p>
+              <div class="matrix-container" style="margin-top:16px;">
+                <table class="matrix-table">
+                  <thead><tr><th></th><th>安装</th><th>维修</th><th>退货</th><th>换货</th></tr></thead>
+                  <tbody>
+                    <tr><td>上门</td><td>工程师上门安装调试</td><td>上门检修，适用于大件</td><td>上门取件退货</td><td>上门取旧换新</td></tr>
+                    <tr><td>寄修</td><td>-</td><td>寄出至维修中心</td><td>寄回并自动退款</td><td>寄出旧件发新件</td></tr>
+                    <tr><td>到店</td><td>-</td><td>到店当场诊断维修</td><td>到店退货当场退款</td><td>到店取件换新</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="case-chunk">
+              <div class="img-showcase img-showcase-light" style="margin-top:0;">
+                <img src="images/售后卡片.png" alt="售后卡片矩阵" />
+                <div class="img-caption">
+                  <span class="img-caption-dot dot-gold"></span>
+                  <p>售后卡片矩阵全景：3 种服务方式 x 4 种服务类型 = 12 种方案的结构化卡片设计，每张卡片包含完整服务信息与一键操作入口</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ──── Module 04: 意图识别推荐门店 ──── -->
+        <div class="case-shell" style="margin-top:22px;">
+          <aside class="case-toc">
+            <h3>Module 04</h3>
+            <ol>
+              <li>NLP 意图识别</li>
+              <li>地理位置匹配</li>
+              <li>门店推荐与预约</li>
+            </ol>
+            <p class="footer-note">AI 从对话中识别"到店"意图，自动匹配用户附近的服务门店。</p>
+          </aside>
+          <div class="case-main">
+            <div class="case-chunk">
+              <span class="case-label">智能意图识别</span>
+              <h3>用户说"想去店里看看"，系统已经找好了最近的门店</h3>
+              <p>
+                当用户在对话中表达到店意图（如"附近有维修点吗""我想去线下看看"），
+                AI 实时捕捉意图信号，结合用户收货地址自动匹配附近门店。
+                右侧面板推送门店推荐卡片，展示门店名称、距离、营业时间、联系方式。
+              </p>
+              <div class="result-grid">
+                <div class="result-card rc-blue"><strong>实时</strong><span>对话中即时识别意图</span></div>
+                <div class="result-card rc-green"><strong>精准</strong><span>基于地址匹配最近门店</span></div>
+                <div class="result-card rc-orange"><strong>闭环</strong><span>识别-推荐-预约一站完成</span></div>
+              </div>
+            </div>
+            <div class="case-chunk">
+              <div class="img-showcase img-showcase-light" style="margin-top:0;">
+                <img src="images/意图识别推荐门店.png" alt="意图识别推荐门店" />
+                <div class="img-caption">
+                  <span class="img-caption-dot dot-green"></span>
+                  <p>意图识别与门店推荐：中间 AI 识别"维修+到店"意图，右侧自动推送门店列表与服务进度卡片</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ──── Module 05: 卡片推送 ──── -->
+        <div class="case-shell" style="margin-top:22px;">
+          <aside class="case-toc">
+            <h3>Module 05</h3>
+            <ol>
+              <li>服务状态实时同步</li>
+              <li>卡片主动推送</li>
+              <li>进度可视化追踪</li>
+            </ol>
+            <p class="footer-note">服务状态变更时，系统主动推送更新卡片到客服工作台。</p>
+          </aside>
+          <div class="case-main">
+            <div class="case-chunk">
+              <span class="case-label">主动推送机制</span>
+              <h3>不是客服去"找"信息，而是信息来"找"客服</h3>
+              <p>
+                当服务进度发生变更（如工程师已派单、维修已完成、用户已确认收货），
+                系统自动将状态变更卡片推送到对应客服的工作台。
+                卡片上附带快捷操作按钮，如"联系用户确认""关闭工单"等。
+              </p>
+              <div class="result-grid">
+                <div class="result-card"><strong>0查询</strong><span>主动推送，消灭信息盲区</span></div>
+                <div class="result-card"><strong>实时</strong><span>秒级同步，杜绝服务断档</span></div>
+                <div class="result-card"><strong>可操作</strong><span>每张卡片附带操作按钮</span></div>
+              </div>
+            </div>
+            <div class="case-chunk">
+              <div class="img-showcase img-showcase-light" style="margin-top:0;">
+                <img src="images/坐席工作台-卡片推送.png" alt="坐席工作台-卡片推送" />
+                <div class="img-caption">
+                  <span class="img-caption-dot dot-gold"></span>
+                  <p>卡片推送机制：中间区域展示"进行中的服务"状态卡片，右侧面板同步展示服务详情与操作入口</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 五图总览 -->
+        <div class="gallery-2x2" style="margin-top:28px;">
+          <div class="gallery-item">
+            <img src="images/国外用户提醒.png" alt="Module 01" />
+            <div class="g-caption"><span class="img-caption-dot dot-blue"></span><p>Module 01 - 用户识别与智能提醒</p></div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/近90天赔付卡片.png" alt="Module 02" />
+            <div class="g-caption"><span class="img-caption-dot dot-orange"></span><p>Module 02 - 近 90 天赔付风险卡片</p></div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/售后卡片.png" alt="Module 03" />
+            <div class="g-caption"><span class="img-caption-dot dot-gold"></span><p>Module 03 - 售后方案矩阵卡片</p></div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/意图识别推荐门店.png" alt="Module 04" />
+            <div class="g-caption"><span class="img-caption-dot dot-green"></span><p>Module 04 - 意图识别推荐门店</p></div>
+          </div>
+          <div class="gallery-item" style="grid-column: span 2;">
+            <img src="images/坐席工作台-卡片推送.png" alt="Module 05" />
+            <div class="g-caption"><span class="img-caption-dot dot-blue"></span><p>Module 05 - 坐席工作台卡片推送，服务状态实时推送至客服工作台</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ RESULTS / 成果复盘 ═══════════════ -->
+      <section class="section" id="result">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow eyebrow-green">Results & Reflection</span>
+            <h2>成果与复盘：数据验证设计价值</h2>
+          </div>
+          <p>
+            项目上线后持续跟踪核心指标，在效率、质量、成本三个维度均取得了显著改善。
+            以下是关键数据成果和设计复盘。
+          </p>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-blue"><strong>12→7.8min</strong><span class="kpi-label">平均处理时长 -35%</span><span>信息聚合消灭"找信息"时间，意图识别减少追问轮次</span></div>
+          <div class="kpi-card kpi-green"><strong>61→83%</strong><span class="kpi-label">首次解决率</span><span>AI 推荐准确率 78%，客服首次即给出正确方案</span></div>
+          <div class="kpi-card kpi-gold"><strong>3.9→4.7</strong><span class="kpi-label">用户满意度</span><span>更快响应 + 更少追问 + 更专业服务感知</span></div>
+          <div class="kpi-card kpi-orange"><strong>-40%</strong><span class="kpi-label">对话轮次</span><span>意图确认从平均 3.7 轮降至 1.2 轮</span></div>
+        </div>
+
+        <div class="reflection-grid">
+          <div class="reflection-card">
+            <h4>走过的弯路：对话内嵌卡片</h4>
+            <p>V1 方案曾尝试将 AI 推荐卡片嵌入聊天对话流中（方案 B）。灰度测试发现消息量大时卡片被快速淹没，客服回滚查找率 42%。这迫使我们转向右侧面板常驻方案——虽然牺牲了"即见即用"的直觉性，但解决了信息持久性问题。</p>
+          </div>
+          <div class="reflection-card">
+            <h4>取舍：精度 vs 覆盖率</h4>
+            <p>AI 意图识别的置信阈值经过三轮调优。初期设为 60% 时覆盖率高但误判多，客服反而需要额外纠错；最终提升到 82%，覆盖率降至 71%，但客服采纳率从 34% 跃升至 78%。好的 AI 体验不是"什么都推"，而是"推了就对"。</p>
+          </div>
+          <div class="reflection-card">
+            <h4>未完成的课题</h4>
+            <p>当前方案对"多意图并发"场景（用户同时咨询维修 + 退货）的支持仍不够好——右侧面板只能展示一个主推荐。下一步计划引入意图优先级排序和对话情绪识别，当检测到用户情绪负面时调整推荐策略。</p>
+          </div>
+        </div>
+
+        <div class="expr-grid" style="margin-top:22px;">
+          <div class="expr-block">
+            <h3>项目中验证的设计方法</h3>
+            <p>不是通用方法论，而是在这个项目中真正起作用的做法：</p>
+            <div class="story-rail" style="margin-top:14px;">
+              <div class="story-step"><span>Step 1</span><strong>跟坐观察</strong><p>5 天嵌入真实工位，发现 78% 时间在找信息</p></div>
+              <div class="story-step"><span>Step 2</span><strong>日志量化</strong><p>500+ 会话分析，锁定 6.3 次系统切换的瓶颈</p></div>
+              <div class="story-step"><span>Step 3</span><strong>方案比选</strong><p>3 种 AI 介入模式对比测试，数据决定取舍</p></div>
+              <div class="story-step"><span>Step 4</span><strong>灰度验证</strong><p>V1 对话内嵌方案失败，迭代至常驻面板</p></div>
+              <div class="story-step"><span>Step 5</span><strong>阈值调优</strong><p>AI 置信度从 60% 调至 82%，采纳率 34%→78%</p></div>
+            </div>
+          </div>
+          <div class="flow-container" style="margin-top:0;">
+            <small>Value Summary</small>
+            <h3>项目核心价值</h3>
+            <ul style="margin:16px 0 0; padding:0; list-style:none;">
+              <li style="display:flex; gap:10px; align-items:flex-start; margin-top:12px; color:rgba(238,242,255,0.82); line-height:1.6; font-size:14px;">
+                <span style="flex:0 0 10px; width:10px; height:10px; margin-top:8px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--orange));"></span>
+                将 4+ 系统的信息聚合到一个工作台，消灭客服"找信息"的时间黑洞
+              </li>
+              <li style="display:flex; gap:10px; align-items:flex-start; margin-top:12px; color:rgba(238,242,255,0.82); line-height:1.6; font-size:14px;">
+                <span style="flex:0 0 10px; width:10px; height:10px; margin-top:8px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--orange));"></span>
+                AI 意图识别将平均意图确认从 3-4 轮降至 1 轮，显著提升处理效率
+              </li>
+              <li style="display:flex; gap:10px; align-items:flex-start; margin-top:12px; color:rgba(238,242,255,0.82); line-height:1.6; font-size:14px;">
+                <span style="flex:0 0 10px; width:10px; height:10px; margin-top:8px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--orange));"></span>
+                风险前置机制帮助企业减少恶意索赔损失，同时保障正常用户权益
+              </li>
+              <li style="display:flex; gap:10px; align-items:flex-start; margin-top:12px; color:rgba(238,242,255,0.82); line-height:1.6; font-size:14px;">
+                <span style="flex:0 0 10px; width:10px; height:10px; margin-top:8px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--orange));"></span>
+                卡片化交互设计形成可复用的组件体系，为后续业务扩展奠定基础
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="footer-note" style="margin-top:24px; text-align:center; font-size:14px;">
+          Smart CS Workstation &mdash; AI-Powered After-Sales Experience Upgrade &mdash; Design Portfolio 2025
+        </p>
+      </section>
+    </div>
+  </body>
+</html>
